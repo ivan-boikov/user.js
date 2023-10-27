@@ -3,9 +3,11 @@ TITLE prefs.js cleaner
 
 REM ### prefs.js cleaner for Windows
 REM ## author: @claustromaniac
-REM ## version: 2.5
+REM ## version: 2.7
 
 CD /D "%~dp0"
+
+IF /I "%~1"=="-unattended" (SET _ua=1)
 
 :begin
 ECHO:
@@ -13,7 +15,7 @@ ECHO:
 ECHO                 ########################################
 ECHO                 ####  prefs.js cleaner for Windows  ####
 ECHO                 ####        by claustromaniac       ####
-ECHO                 ####              v2.5              ####
+ECHO                 ####              v2.7              ####
 ECHO                 ########################################
 ECHO:
 CALL :message "This script should be run from your Firefox profile directory."
@@ -22,18 +24,20 @@ CALL :message "This will allow inactive preferences to be reset to their default
 ECHO   This Firefox profile shouldn't be in use during the process.
 CALL :message ""
 TIMEOUT 1 /nobreak >nul
-CHOICE /C SHE /N /M "Start [S] Help [H] Exit [E]"
-CLS
-IF ERRORLEVEL 3 (EXIT /B)
-IF ERRORLEVEL 2 (GOTO :showhelp)
+
+IF NOT DEFINED _ua (
+	CHOICE /C SHE /N /M "Start [S] Help [H] Exit [E]"
+	CLS
+	IF ERRORLEVEL 3 (EXIT /B)
+	IF ERRORLEVEL 2 (GOTO :showhelp)
+)
 IF NOT EXIST "user.js" (CALL :abort "user.js not found in the current directory." 30)
 IF NOT EXIST "prefs.js" (CALL :abort "prefs.js not found in the current directory." 30)
 CALL :strlenCheck
 CALL :FFcheck
 
 CALL :message "Backing up prefs.js..."
-FOR /F "usebackq tokens=1,2 delims==" %%i IN (`wmic os get LocalDateTime /VALUE 2^>NUL`) DO IF '.%%i.'=='.LocalDateTime.' SET ldt=%%j
-SET ldt=%ldt:~0,8%_%ldt:~8,6%
+FOR /F "delims=" %%# IN ('powershell get-date -format "{yyyyMMdd_HHmmss}"') DO @SET ldt=%%#
 COPY /B /V /Y prefs.js "prefs-backup-%ldt%.js"
 
 CALL :message "Cleaning prefs.js..."
